@@ -827,6 +827,93 @@
             );
         }
 
+        /* ───── RandomNewsModal ───── */
+        function RandomNewsModal({ newsList, initialIndex, onClose }) {
+            const [idx, setIdx] = useState(initialIndex);
+            const news = newsList[idx];
+
+            const goNext = () => {
+                let next;
+                do { next = Math.floor(Math.random() * newsList.length); } while (newsList.length > 1 && next === idx);
+                setIdx(next);
+            };
+
+            if (!news) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 overflow-hidden animate-slide-in">
+                        {/* 이미지 헤더 */}
+                        <div className="relative h-56 overflow-hidden">
+                            {news.image ? (
+                                <img src={news.image} alt={news.title} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-amber-100 flex items-center justify-center text-6xl">📰</div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                            {/* 닫기 */}
+                            <button onClick={onClose}
+                                className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-all">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            {/* 랜덤 뱃지 */}
+                            <div className="absolute top-4 left-4">
+                                <span className="px-3 py-1 bg-amber-500/90 text-white text-xs font-bold rounded-full">🎲 랜덤</span>
+                            </div>
+                            {/* 종목 + 제목 */}
+                            <div className="absolute bottom-5 left-6 right-6">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-white font-bold">{news.company}</span>
+                                    <span className="text-white/60 text-sm">{news.ticker}</span>
+                                </div>
+                                <h2 className="text-white text-xl font-bold leading-tight">{news.title}</h2>
+                            </div>
+                        </div>
+
+                        {/* 본문 */}
+                        <div className="p-6 max-h-72 overflow-y-auto">
+                            {/* 태그 */}
+                            {news.tags && news.tags.length > 0 && (
+                                <div className="flex gap-1.5 mb-4 flex-wrap">
+                                    {news.tags.map(t => (
+                                        <span key={t} className="tag-chip tag-chip-inactive text-xs">#{t}</span>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="text-gray-700 text-sm leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: (news.fullContent || news.summary || '').replace(/\n/g, '<br/>') }} />
+                            {/* URL */}
+                            {news.url && (
+                                <div className="mt-4 pt-4 border-t border-gray-100">
+                                    <a href={news.url} target="_blank" rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 gradient-bg text-white rounded-xl text-sm font-semibold hover:shadow-md transition-all">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        원문 바로가기
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 하단 버튼 */}
+                        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                            <button onClick={onClose}
+                                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-600 font-semibold hover:bg-gray-50 transition-all text-sm">
+                                닫기
+                            </button>
+                            <button onClick={goNext}
+                                className="flex-1 py-3 gradient-bg text-white rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                                🎲 다음 랜덤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         /* ───── App ───── */
         const STORAGE_KEY = 'stockNews_newsList';
 
@@ -845,6 +932,8 @@
             const [tagInputDetail, setTagInputDetail] = useState('');
             const [showTagEdit, setShowTagEdit] = useState(false);
             const [showEditNews, setShowEditNews] = useState(false);
+            const [showRandomNews, setShowRandomNews] = useState(false);
+            const [randomIndex, setRandomIndex] = useState(0);
             const [showGhSettings, setShowGhSettings] = useState(false);
             const [ghConfig, setGhConfig] = useState(() => loadGhConfig());
             const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | ok | error
@@ -959,6 +1048,15 @@
                                             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                                         </svg>
                                         {ghConfig.token ? 'Gist 연동됨' : 'Gist 연동'}
+                                    </button>
+                                    {/* 랜덤 버튼 */}
+                                    <button onClick={() => {
+                                        if (newsList.length === 0) return;
+                                        setRandomIndex(Math.floor(Math.random() * newsList.length));
+                                        setShowRandomNews(true);
+                                    }}
+                                        className="flex items-center gap-2 px-4 py-2.5 border border-amber-200 text-amber-700 rounded-xl text-sm font-semibold hover:bg-amber-50 transition-all">
+                                        🎲 랜덤
                                     </button>
                                     {/* 태그 관리 버튼 */}
                                     <button onClick={() => setShowTagManager(true)}
@@ -1163,6 +1261,7 @@
                     {showTagManager && <TagManagerModal allTags={allTags} newsList={newsList} setNewsList={setNewsList} onClose={() => setShowTagManager(false)} />}
                     {showEditNews && selectedNews && <EditNewsModal news={selectedNews} onClose={() => setShowEditNews(false)} onSave={saveNews} allTags={allTags} />}
                     {showGhSettings && <GitHubSettingsModal onClose={() => setShowGhSettings(false)} onSaved={(cfg) => setGhConfig(cfg)} />}
+                    {showRandomNews && newsList.length > 0 && <RandomNewsModal newsList={newsList} initialIndex={randomIndex} onClose={() => setShowRandomNews(false)} />}
                 </div>
             );
         }
