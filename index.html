@@ -945,13 +945,16 @@
                 setSyncStatus('syncing');
                 gistLoad(cfg.token, cfg.gistId)
                     .then(data => {
-                        if (Array.isArray(data) && data.length > 0) {
+                        if (Array.isArray(data)) {
                             setNewsListRaw(data);
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                         }
                         setSyncStatus('ok');
                     })
-                    .catch(() => setSyncStatus('error'));
+                    .catch(e => {
+                        setSyncStatus('error');
+                        console.error('Gist 로드 실패:', e.message);
+                    });
             }, []);
 
             // newsList 변경 시 localStorage + Gist 저장
@@ -964,7 +967,10 @@
                         setSyncStatus('syncing');
                         gistSave(cfg.token, cfg.gistId, next)
                             .then(() => setSyncStatus('ok'))
-                            .catch(() => setSyncStatus('error'));
+                            .catch(e => {
+                                setSyncStatus('error');
+                                alert('⚠️ Gist 저장 실패: ' + e.message + '\n헤더의 [저장] 버튼으로 다시 시도해주세요.');
+                            });
                     }
                     return next;
                 });
@@ -1038,6 +1044,26 @@
                                             }} title="Gist에 수동 저장"
                                                 className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-all">
                                                 저장
+                                            </button>
+                                            <button onClick={async () => {
+                                                const cfg = loadGhConfig();
+                                                if (!cfg.token || !cfg.gistId) return alert('Gist 연동 설정이 필요합니다.');
+                                                setSyncStatus('syncing');
+                                                try {
+                                                    const data = await gistLoad(cfg.token, cfg.gistId);
+                                                    if (Array.isArray(data)) {
+                                                        setNewsListRaw(data);
+                                                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                                                    }
+                                                    setSyncStatus('ok');
+                                                    alert('✅ Gist에서 불러왔습니다! (' + (Array.isArray(data) ? data.length : 0) + '개)');
+                                                } catch(e) {
+                                                    setSyncStatus('error');
+                                                    alert('불러오기 실패: ' + e.message);
+                                                }
+                                            }} title="Gist에서 최신 데이터 불러오기"
+                                                className="text-xs px-2.5 py-1 border border-amber-200 rounded-lg text-amber-700 hover:bg-amber-50 transition-all">
+                                                🔄 불러오기
                                             </button>
                                         </div>
                                     )}
