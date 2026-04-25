@@ -935,6 +935,9 @@
             const [showRandomNews, setShowRandomNews] = useState(false);
             const [randomIndex, setRandomIndex] = useState(0);
             const [showGhSettings, setShowGhSettings] = useState(false);
+            const [appTitle, setAppTitle] = useState(() => localStorage.getItem('stocknews_appTitle') || 'Stock News');
+            const [editingTitle, setEditingTitle] = useState(false);
+            const [titleInput, setTitleInput] = useState('');
             const [ghConfig, setGhConfig] = useState(() => loadGhConfig());
             const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | ok | error
 
@@ -1013,7 +1016,34 @@
                         <div className="max-w-7xl mx-auto px-6 py-5">
                             <div className="flex items-center justify-between mb-5">
                                 <div>
-                                    <h1 className="text-3xl font-bold gradient-text flex items-center gap-2"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAD00lEQVR4nN2Xu28cNxDGvxly9x6S7mRHjgPDkuMqCJIqKYL81SlTpkyZNGniQgYS2Hr4tHf7JJfkTApFtmMYd3vSGQJCsFpw+eNwvnmQfvrjDPcx+F6o/wswAbTNersTqgJRmQBDMvCXnVn8w/TFd9NTGbzhXcEEjWoe29Vxfv48f/3QVEmZoJ8cDECBEUWAoZRTlGG+vquPFWRILuIsahbULNK+JdEB7B2Ii6Gtjn6pvxVQr5nBIH3tRtUWUskEUAvZ7N4dghW4NnQgFbcV10dcqNtQtwMrwISoNGP/5QMbh6aKO4Oh+uOzwwfaHo3S08/GByNWVSYQEJMeH+jhhFWHmj3Ix0TwUb86Gj+aZt+fzEuFiJ7MsVhpzMZvmn6K7snhrItkyL5p+yGBPAicBAcj8/XnU9F0OJup900ID/Zz8KSJpliVT2ZistGE09GBqfvkQiTaQGe90cXHp4KAKPrN40luWAFVOcisIRKlvZEw4ek8P3o4jyIK3ctlPs2vt16/szW8zs0EhKTH8/xkPgHUEAGwxIfjvHD92NJ+nvLpLM9ERJV4ZPFoz1Yu70I0a422ddetvxMienY46fr+A9lIkjqkjEiTNuk9hoZphqvK69r4sj//+tsac1XVGr64OvpiNj3IMlHFv1pLIQn+q2EitDE5kc6n3/+8FNU1zYFNaV08EqFx4axo98Z2zAwiAKSAIqUP6xApXExCuFy2nQ+ZNWuii4mwfjLTsvQ+Jp/E3IjVGL6O4LeTAVFNIgCK0jNv2HlDAlGFYSqbvu5im+I74wBmfs8cJeamqWMMnU9l0xum9blkc+YiQkyyrLwLwYVwbTMBEvv3z0fEq6Ig6LLqY5JNYTwkZSqI6Kr0rfMX52fGGFUFUVcuIXJzOBJJ1WqpRIuV20gdBFbAMNVt6Fz8+7LwIRGBmPu2jr0nZqgyc+d817W+l7LtDfHGnD2oSBAhiqzq/tLx66LJDIM4ht63FTMLYAiLJrU6WtUuxM33PBSsCkO0KEMbs9Pz1c1XcdUKICiIsKhcQ/tXKz+oxxxeFonQBVHw66ItGm+ZQOyqlUhippBkWTuneeWUhz0otqjHBDCTD/HlRWWYQNx3TXDOGlN3oXLBMH2y1kfVML+8qFxIGaMMfF7H3NJV7fthrr0l+LqcFY1/ddWOLC1076zsCfqm9Nt1XLdq9hTA6fnSq61pv2xc7eKy8TxQVDdj6/ZWFdbweVHrhGFHzodXRdv1ibdx8G3AAJioj/JXBcOURF+8KkV1q8cx7vJoe0uqun7dup2D351gKzXvEHy7cW/gfwAvyELlJVouJwAAAABJRU5ErkJggg==" className="w-9 h-9 rounded-lg object-cover" alt="icon" /> Stock News</h1>
+                                    <h1 className="text-3xl font-bold gradient-text flex items-center gap-2"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAD00lEQVR4nN2Xu28cNxDGvxly9x6S7mRHjgPDkuMqCJIqKYL81SlTpkyZNGniQgYS2Hr4tHf7JJfkTApFtmMYd3vSGQJCsFpw+eNwvnmQfvrjDPcx+F6o/wswAbTNersTqgJRmQBDMvCXnVn8w/TFd9NTGbzhXcEEjWoe29Vxfv48f/3QVEmZoJ8cDECBEUWAoZRTlGG+vquPFWRILuIsahbULNK+JdEB7B2Ii6Gtjn6pvxVQr5nBIH3tRtUWUskEUAvZ7N4dghW4NnQgFbcV10dcqNtQtwMrwISoNGP/5QMbh6aKO4Oh+uOzwwfaHo3S08/GByNWVSYQEJMeH+jhhFWHmj3Ix0TwUb86Gj+aZt+fzEuFiJ7MsVhpzMZvmn6K7snhrItkyL5p+yGBPAicBAcj8/XnU9F0OJup900ID/Zz8KSJpliVT2ZistGE09GBqfvkQiTaQGe90cXHp4KAKPrN40luWAFVOcisIRKlvZEw4ek8P3o4jyIK3ctlPs2vt16/szW8zs0EhKTH8/xkPgHUEAGwxIfjvHD92NJ+nvLpLM9ERJV4ZPFoz1Yu70I0a422ddetvxMienY46fr+A9lIkjqkjEiTNuk9hoZphqvK69r4sj//+tsac1XVGr64OvpiNj3IMlHFv1pLIQn+q2EitDE5kc6n3/+8FNU1zYFNaV08EqFx4axo98Z2zAwiAKSAIqUP6xApXExCuFy2nQ+ZNWuii4mwfjLTsvQ+Jp/E3IjVGL6O4LeTAVFNIgCK0jNv2HlDAlGFYSqbvu5im+I74wBmfs8cJeamqWMMnU9l0xum9blkc+YiQkyyrLwLwYVwbTMBEvv3z0fEq6Ig6LLqY5JNYTwkZSqI6Kr0rfMX52fGGFUFUVcuIXJzOBJJ1WqpRIuV20gdBFbAMNVt6Fz8+7LwIRGBmPu2jr0nZqgyc+d817W+l7LtDfHGnD2oSBAhiqzq/tLx66LJDIM4ht63FTMLYAiLJrU6WtUuxM33PBSsCkO0KEMbs9Pz1c1XcdUKICiIsKhcQ/tXKz+oxxxeFonQBVHw66ItGm+ZQOyqlUhippBkWTuneeWUhz0otqjHBDCTD/HlRWWYQNx3TXDOGlN3oXLBMH2y1kfVML+8qFxIGaMMfF7H3NJV7fthrr0l+LqcFY1/ddWOLC1076zsCfqm9Nt1XLdq9hTA6fnSq61pv2xc7eKy8TxQVDdj6/ZWFdbweVHrhGFHzodXRdv1ibdx8G3AAJioj/JXBcOURF+8KkV1q8cx7vJoe0uqun7dup2D351gKzXvEHy7cW/gfwAvyELlJVouJwAAAABJRU5ErkJggg==" className="w-9 h-9 rounded-lg object-cover" alt="icon" />
+                                        {editingTitle ? (
+                                            <input
+                                                autoFocus
+                                                className="text-3xl font-bold gradient-text bg-transparent border-b-2 border-amber-400 outline-none min-w-[100px]"
+                                                value={titleInput}
+                                                onChange={e => setTitleInput(e.target.value)}
+                                                onBlur={() => {
+                                                    const v = titleInput.trim() || 'Stock News';
+                                                    setAppTitle(v);
+                                                    localStorage.setItem('stocknews_appTitle', v);
+                                                    document.title = v;
+                                                    setEditingTitle(false);
+                                                }}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') e.target.blur();
+                                                    if (e.key === 'Escape') setEditingTitle(false);
+                                                }}
+                                            />
+                                        ) : (
+                                            <span
+                                                onClick={() => { setTitleInput(appTitle); setEditingTitle(true); }}
+                                                title="클릭해서 제목 수정"
+                                                className="cursor-pointer hover:opacity-70 transition-opacity">
+                                                {appTitle}
+                                            </span>
+                                        )}
+                                    </h1>
 
                                 </div>
                                 <div className="flex items-center gap-3">
