@@ -188,6 +188,51 @@
             );
         }
 
+        /* ───── GitHub 업로드 함수 ───── */
+        async function uploadToGitHub(base64Data, fileName, folder) {
+            const cfg = loadGhConfig();
+            if (!cfg.token) throw new Error('GitHub 토큰이 없습니다. Gist 연동을 먼저 설정해주세요.');
+
+            const userRes = await fetch('https://api.github.com/user', {
+                headers: { Authorization: `token ${cfg.token}`, Accept: 'application/vnd.github.v3+json' }
+            });
+            if (!userRes.ok) throw new Error('GitHub 인증 실패');
+            const user = await userRes.json();
+            const owner = user.login;
+
+            const reposRes = await fetch(`https://api.github.com/users/${owner}/repos?per_page=100`, {
+                headers: { Authorization: `token ${cfg.token}`, Accept: 'application/vnd.github.v3+json' }
+            });
+            const repos = await reposRes.json();
+            const targetRepo = repos.find(r => r.name === 'stock-news') || repos[0];
+            if (!targetRepo) throw new Error('stock-news 레포를 찾을 수 없습니다.');
+
+            const repo = targetRepo.name;
+            const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `${folder}/${Date.now()}_${safeName}`;
+            const content = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+
+            const uploadRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                method: 'PUT',
+                headers: { Authorization: `token ${cfg.token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `Upload ${fileName}`, content: content })
+            });
+            if (!uploadRes.ok) {
+                const err = await uploadRes.json();
+                throw new Error(err.message || uploadRes.status);
+            }
+            const data = await uploadRes.json();
+            return data.content.download_url;
+        }
+
+        async function uploadImageToGitHub(base64Data, fileName) {
+            return uploadToGitHub(base64Data, fileName, 'images');
+        }
+
+        async function uploadFileToGitHub(base64Data, fileName) {
+            return uploadToGitHub(base64Data, fileName, 'attachments');
+        }
+
         /* ───── AddNewsModal ───── */
         function AddNewsModal({ onClose, onAdd, allTags }) {
             const [form, setForm] = useState({
@@ -493,7 +538,7 @@
         }
 
         /* ───── EditNewsModal ───── */
-        function EditNewsModal({ news, onClose, onSave, allTags }) {
+        function EditNewsModal({ news, onClose, onSave, onDelete, allTags }) {
             const [form, setForm] = useState({
                 title: news.title,
                 summary: news.summary,
@@ -726,7 +771,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end">
+                        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                            <button onClick={() => {
+                                if (window.confirm(`"${news.title}" 카드를 삭제할까요?\n삭제 후 복구가 불가능합니다.`)) {
+                                    onDelete(news.id);
+                                    onClose();
+                                }
+                            }} className="px-5 py-2.5 border border-red-200 text-red-500 rounded-xl font-semibold hover:bg-red-50 transition-all text-sm flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                삭제
+                            </button>
+                            <div className="flex-1" />
                             <button onClick={onClose} className="px-6 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-semibold hover:bg-gray-50 transition-all">취소</button>
                             <button onClick={handleSave} className="px-6 py-2.5 gradient-bg text-white rounded-xl font-semibold hover:shadow-lg transition-all">저장</button>
                         </div>
@@ -1080,6 +1137,11 @@
                 setNewsList(prev => prev.map(n => n.id === updated.id ? updated : n));
                 setSelectedNews(updated);
             };
+            const deleteNews = (id) => {
+                setNewsList(prev => prev.filter(n => n.id !== id));
+                setSelectedNews(null);
+                setShowEditNews(false);
+            };
 
             // Per-news tag operations (in detail modal)
             const addTagToNews = (newsId, tag) => {
@@ -1400,7 +1462,7 @@
                     {/* 모달들 */}
                     {showAddNews && <AddNewsModal onClose={() => setShowAddNews(false)} onAdd={addNews} allTags={allTags} />}
                     {showTagManager && <TagManagerModal allTags={allTags} newsList={newsList} setNewsList={setNewsList} onClose={() => setShowTagManager(false)} />}
-                    {showEditNews && selectedNews && <EditNewsModal news={selectedNews} onClose={() => setShowEditNews(false)} onSave={saveNews} allTags={allTags} />}
+                    {showEditNews && selectedNews && <EditNewsModal news={selectedNews} onClose={() => setShowEditNews(false)} onSave={saveNews} onDelete={deleteNews} allTags={allTags} />}
                     {showGhSettings && <GitHubSettingsModal onClose={() => setShowGhSettings(false)} onSaved={(cfg) => setGhConfig(cfg)} />}
                     {showRandomNews && newsList.length > 0 && <RandomNewsModal newsList={newsList} initialIndex={randomIndex} onClose={() => setShowRandomNews(false)} />}
                 </div>
